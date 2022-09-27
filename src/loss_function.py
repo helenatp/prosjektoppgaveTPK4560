@@ -51,15 +51,6 @@ def K_G(x, y):
 #print(K_G(2, 3))
 
 # Find the constant a 
-def alpha(k, x, y):
-    n = len(x)
-    K = np.zeros((n,n))
-    for i in range(n):
-        for j in range(n):
-            K[i,j] = k(x[i], x[j])
-    alpha = np.linalg.inv(K + lam*np.eye(n)) @ y
-    return alpha
-
 def K(k, x, y):
     m = len(x)
     K = np.zeros((m,m))

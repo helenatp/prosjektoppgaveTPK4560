@@ -16,12 +16,8 @@ b = np.random.rand(m) *2*np.pi
 
 n = 200
 x = randn(n)/2
-# y = 1 + 5*np.sin(x/10) + 5*x**2 + randn(n)
+#y = 1 + 5*np.sin(x/10) + 5*x**2 + randn(n)
 y=np.sin(x) + randn(n)
-x_min = np.min(x)
-x_max = np.max(x)
-y_min = np.min(y)
-y_max = np.max(y)
 lam = 0.000001
 
 '''
@@ -29,10 +25,10 @@ Different kernels
 '''
 # Rahimi and Recht 
 def z_RR(x):
-    return np.sqrt(2/m)*np.cos(w*x + b)
+    return np.sqrt(2)*np.cos(w*x + b)
 
 def K_RR(x, y):
-    return np.sum(z_RR(x)*z_RR(y))
+    return 1/m * np.sum(z_RR(x)*z_RR(y))
 
 # Suzuki
 def zc(x):
@@ -44,12 +40,11 @@ def zs(x):
 def K_S(x, y):
     return np.sum(zc(x) * zc(y)) + np.sum(zs(x) * zs(y))
 
-# Exact Gaussian kernel
+# Gaussian kernel
 def K_G(x, y): 
-    return np.exp(-(x-y)**2/sigma2)
+    return np.exp((-(x-y)**2)/sigma2)
 
-#print(K_G(2, 3))
-
+# Find the constant a 
 def K(k, x, y):
     n = len(x)
     Kxy = np.zeros((n,m))
@@ -59,17 +54,20 @@ def K(k, x, y):
     return Kxy
 
 # Find the constant a 
-def a(k, x, y):
-    m = len(x)
-    Kxx = K(k, x, x)
-    return np.linalg.inv(Kxx + m*lam*np.eye(m)) @ y
+def a_G(x, y):
+    n = len(x)
+    Kxx = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            Kxx[i, j] = K_G(x[i], x[j])
+    return np.linalg.inv(Kxx + lam*np.eye(n)) @ y
 
 def a_S(x, y):
     n = len(x)
     Z = np.zeros((n,m))
     for i in range(n):
-        Z[i,:] = np.sum(zc(x[i]) * zc(x[i])) + np.sum(zs(x[i]) * zs(x[i]))
-    beta = np.linalg.inv((Z.T@Z) + lam*np.eye(n)) @ Z.T @ y  
+        Z[i,:] = zc(x[i]) + zs(x[i])
+    beta = np.linalg.inv((Z.T@Z) + lam*np.eye(m)) @ Z.T @ y
     return beta
 
 def a_RR(x, y):
@@ -81,59 +79,67 @@ def a_RR(x, y):
     return beta
 
 # Find norm f^2
-def norm_f2(K, a):
-    print(a.T)
-    print(len(K[0]))
-    return a.T @ K @ a
-
-# Loss function
-def loss_function(Kx, a, x, y, normf):
-    n = len(x)
-    sum = 0
-    for i in range(n):
-        sum += (a[i]*Kx[i] - y[i])**2
-    return 1/len(x) * sum + lam*normf
+#def norm_f2(K, a):
+#    return a.T @ K @ a
 
 # With Riemann and Recht 
 alpha_RR = a_RR(x, y)
 Ky_RR = K(K_RR, x, y)
 Kx_RR = K(K_RR, x, x)
-normf_RR = norm_f2(Ky_RR, alpha_RR)
+#normf_RR = norm_f2(Ky_RR, alpha_RR)
 
 # With Suzuki
-alpha_S = a_S(K_S, x, y)
+alpha_S = a_S(x, y)
 Ky_S = K(K_S, x, y)
 Kx_S = K(K_S, x, x)
-normf_S = norm_f2(Ky_S, alpha_S)
+#normf_S = norm_f2(Ky_S, alpha_S)
 
-# With exact kernel
-a_G = a(K_G, x, y)
+# With Gaussian kernel
+alpha_G = a_G(x, y)
 Ky_G = K(K_G, x, y)
 Kx_G = K(K_G, x, x)
-normf_G = norm_f2(Ky_G, a_G)
+#normf_G = norm_f2(Ky_G, a_G)
 
 x_sort = np.sort(x)
 
-loss_S = loss_function(Kx_S, alpha_S, x, y, normf_S)
+def loss_function(k, a, x, y, normf):
+    n = len(x)
+    sum = 0
+    for i in range(n):
+        f_i = 0
+        for j in range(n):
+            f_i += a[j]*k(x[i], x[j])
+        sum += (f_i - y[i])**2
+    return 1/len(x) * sum + lam *normf
 
-loss_G = loss_function(Kx_G, a_G, x, y, normf_G)
+#loss_S = loss_function(K_S, a_S, x, y, normf_S)
 
-loss_RR = loss_function(Kx_RR, alpha_RR, x, y, normf_RR)
+#loss_G = loss_function(K_G, a_G, x, y, normf_G)
+
+#loss_RR = loss_function(K_RR, a_RR, x, y, normf_RR)
+# ikke samme alpha på cos og sin i rahimi
+#print("Loss Suzuki: ", loss_S)
+#print("Loss Gaussaian: ", loss_G)
 
 r = np.sort(x)
 u = np.zeros(n); v = np.zeros(n); s = np.zeros(n)
 for j in range(n):
     S = 0
     for i in range(n):
-        S = S + a_G[i] * K_G(x[i], r[j])
+        S = S + alpha_G[i] * K_G(x[i], r[j])
         u[j] = S; 
-        v[j] = np.sum(alpha_S * K_G(x[i], r[j]))
+        v[j] = np.sum(alpha_S * (zc(r[j])+zs(r[j])))
         s[j] = np.sum(alpha_RR * z_RR(r[j]))
-
-plt.scatter(x_sort,y, facecolors ='none' , edgecolors = "k" , marker = "o")
-plt.plot( x_sort, u, c = "r" , label = "w/o Approx")
-plt.plot( x_sort, v, c = "b" , label = "with Suzuki")
-plt.plot(x_sort, j, c = "y", label ="With Rahimi")
+        
+plt.scatter(x,y, facecolors ='none' , edgecolors = "k" , marker = "o")
+plt.plot(r, u, c="r", label="with Gaussian")
+plt.plot(r,v, c="b", label="with Suzuki")
+plt.plot(r, s, c="y", label="with Rahimi")
+plt.xlim ( -1.5 , 2)
+plt.ylim ( -2 , 8)
+"""plt.plot( x_sort, loss_G, c = "r" , label = "w/o Approx")
+plt.plot( x_sort, loss_S, c = "b" , label = "with Approx")
+plt.plot(x_sort, loss_RR, c = "y", label ="With Rahimi")"""
 plt.xlabel("x")
 plt.ylabel("y")
 plt.title("Kernel Regression")

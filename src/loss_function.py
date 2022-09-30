@@ -1,12 +1,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib import style
 plt.style.use("seaborn-ticks")
 from sklearn.decomposition import PCA
-from numpy.random import randn # Gaussian random numbers
-from scipy.stats import norm
-
+from numpy.random import randn # Gaussian random numbe
 #Define the constants and functions here
 m = 20
 sigma = 2
@@ -79,8 +76,8 @@ def a_RR(x, y):
     return beta
 
 # Find norm f^2
-#def norm_f2(K, a):
-#    return a.T @ K @ a
+def norm_f2(K, a):
+    return a.T @ K @ a
 
 # With Riemann and Recht 
 alpha_RR = a_RR(x, y)
@@ -99,8 +96,6 @@ alpha_G = a_G(x, y)
 Ky_G = K(K_G, x, y)
 Kx_G = K(K_G, x, x)
 #normf_G = norm_f2(Ky_G, a_G)
-
-x_sort = np.sort(x)
 
 def loss_function(k, a, x, y, normf):
     n = len(x)
@@ -137,19 +132,8 @@ plt.plot(r,v, c="b", label="with Suzuki")
 plt.plot(r, s, c="y", label="with Rahimi")
 plt.xlim ( -1.5 , 2)
 plt.ylim ( -2 , 8)
-"""plt.plot( x_sort, loss_G, c = "r" , label = "w/o Approx")
-plt.plot( x_sort, loss_S, c = "b" , label = "with Approx")
-plt.plot(x_sort, loss_RR, c = "y", label ="With Rahimi")"""
 plt.xlabel("x")
 plt.ylabel("y")
 plt.title("Kernel Regression")
 plt.legend( loc = "upper left" , frameon = True , prop ={'size': 14 } )
 plt.show()
-
-
-
-"""
-plt.plot( x_sort, loss_G, c = "r" , label = "w/o Approx")
-plt.plot( x_sort, loss_S, c = "b" , label = "with Suzuki")
-plt.plot(x_sort, loss_RR, c = "y", label ="With Rahimi")
-"""

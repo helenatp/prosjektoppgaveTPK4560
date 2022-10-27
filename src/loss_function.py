@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 plt.style.use("seaborn-ticks")
 from sklearn.decomposition import PCA
-from numpy.random import randn # Gaussian random numbe
+from numpy.random import randn # Gaussian random number
 #Define the constants and functions here
 m = 20
 sigma = 2
